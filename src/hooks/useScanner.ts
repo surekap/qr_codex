@@ -9,7 +9,7 @@ interface UseScannerOptions {
   enabled: boolean;
 }
 
-export function useScanner(videoRef: React.RefObject<HTMLVideoElement>, { onResult, enabled }: UseScannerOptions) {
+export function useScanner(videoRef: React.RefObject<HTMLVideoElement | null>, { onResult, enabled }: UseScannerOptions) {
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
   const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);

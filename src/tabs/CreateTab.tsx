@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import bwipjs from 'bwip-js';
+import bwipjs from 'bwip-js/browser';
 import { shareImage } from '../utils/share';
 import { storageGet, storageSet } from '../utils/storage';
 import { STORAGE_KEYS } from '../types';
@@ -52,15 +52,16 @@ export function CreateTab({ prefillText, onPrefillConsumed }: CreateTabProps) {
     const canvas = canvasRef.current;
 
     try {
-      bwipjs.toCanvas(canvas, {
+      const opts: Parameters<typeof bwipjs.toCanvas>[1] & { eclevel?: string } = {
         bcid: fmt.bcid,
         text: text.trim(),
         scale: 4,
         height: fmt.bcid === 'pdf417' ? 12 : undefined,
         includetext: false,
-        eclevel: isQr ? 'H' : undefined,
         backgroundcolor: 'FFFFFF',
-      });
+      };
+      if (isQr) opts.eclevel = 'H';
+      bwipjs.toCanvas(canvas, opts);
 
       if (isQr && qrIcon) {
         const icon = new Image();
