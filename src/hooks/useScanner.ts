@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/browser';
-import { NotFoundException, ChecksumException, FormatException } from '@zxing/library';
+import { BarcodeFormat, NotFoundException, ChecksumException, FormatException } from '@zxing/library';
 
 export type ScanResult = { text: string; format: string };
 
@@ -18,6 +18,7 @@ export function useScanner(videoRef: React.RefObject<HTMLVideoElement>, { onResu
   const [isReady, setIsReady] = useState(false);
   const onResultRef = useRef(onResult);
   onResultRef.current = onResult;
+  const isReadyRef = useRef(false);
 
   useEffect(() => {
     BrowserMultiFormatReader.listVideoInputDevices()
@@ -35,16 +36,20 @@ export function useScanner(videoRef: React.RefObject<HTMLVideoElement>, { onResu
     if (!enabled || !videoRef.current || cameras.length === 0) return;
     const reader = new BrowserMultiFormatReader();
     readerRef.current = reader;
+    isReadyRef.current = false;
     setIsReady(false);
     setError(null);
     const deviceId = cameras[cameraIndex]?.deviceId;
 
     reader.decodeFromVideoDevice(deviceId, videoRef.current, (result, err) => {
-      setIsReady(true);
+      if (!isReadyRef.current) {
+        isReadyRef.current = true;
+        setIsReady(true);
+      }
       if (result) {
         onResultRef.current({
           text: result.getText(),
-          format: result.getBarcodeFormat().toString(),
+          format: BarcodeFormat[result.getBarcodeFormat()],
         });
       } else if (err && !(err instanceof NotFoundException) && !(err instanceof ChecksumException) && !(err instanceof FormatException)) {
         setError('Camera error. Please retry.');
@@ -71,7 +76,7 @@ export function useScanner(videoRef: React.RefObject<HTMLVideoElement>, { onResu
     const reader = new BrowserMultiFormatReader();
     try {
       const result = await reader.decodeFromImageUrl(url);
-      return [{ text: result.getText(), format: result.getBarcodeFormat().toString() }];
+      return [{ text: result.getText(), format: BarcodeFormat[result.getBarcodeFormat()] }];
     } catch {
       return [];
     } finally {

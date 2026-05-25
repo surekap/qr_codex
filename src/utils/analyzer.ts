@@ -204,7 +204,13 @@ function parseProductCode(text: string, format: string): AnalysisResult | null {
 
   // ISBN-10
   if (t.length === 10 && isbn10Checksum(t)) {
-    return result('book', { 'ISBN-10': t, 'ISBN-13': `978${t.slice(0, 9)}` }, 0.9, 0.95);
+    // Convert to ISBN-13: prepend 978, take first 9 digits, compute EAN-13 check digit
+    const isbn13Base = '978' + t.slice(0, 9);
+    let sum = 0;
+    for (let i = 0; i < 12; i++) sum += parseInt(isbn13Base[i]) * (i % 2 === 0 ? 1 : 3);
+    const check = (10 - (sum % 10)) % 10;
+    const isbn13 = isbn13Base + check;
+    return result('book', { 'ISBN-10': t, 'ISBN-13': isbn13 }, 0.9, 0.95);
   }
 
   // EAN-13 / ISBN-13 / UPC-A (12 digits treated as UPC-A padded)
@@ -244,7 +250,7 @@ const CARRIER_PATTERNS: Array<{ name: string; re: RegExp; url: (n: string) => st
   { name: 'UPS', re: /^1Z[A-Z0-9]{16}$/i, url: n => `https://www.ups.com/track?tracknum=${n}` },
   { name: 'FedEx', re: /^[0-9]{12,15}$/, url: n => `https://www.fedex.com/fedextrack/?trknbr=${n}` },
   { name: 'DHL', re: /^[0-9]{10,11}$/, url: n => `https://www.dhl.com/track?tracking-id=${n}` },
-  { name: 'USPS', re: /^(94|93|92|94|95)[0-9]{20}$/, url: n => `https://tools.usps.com/go/TrackConfirmAction?tLabels=${n}` },
+  { name: 'USPS', re: /^(94|93|92|95)[0-9]{20}$/, url: n => `https://tools.usps.com/go/TrackConfirmAction?tLabels=${n}` },
 ];
 
 function parseTracking(text: string): AnalysisResult | null {
@@ -303,20 +309,37 @@ const GS1_AIS: Record<string, string> = {
 };
 
 function parseGs1(text: string): AnalysisResult | null {
-  const FNC1 = '';
-  if (!text.includes(FNC1) && !text.startsWith('(')) return null;
+  // Only attempt if text contains GS1 FNC1 separator or parenthetical AIs
+  const hasFnc1 = text.includes('\x1d');
+  const hasParens = /^\((\d{2,4})\)/.test(text);
+  if (!hasFnc1 && !hasParens) return null;
+
   const fields: Record<string, string> = {};
-  let s = text.replace(new RegExp(FNC1, 'g'), '');
-  s = s.replace(/\((\d{2,4})\)/g, '$1');
-  const parts = s.split('').filter(Boolean);
-  for (const part of parts) {
-    for (const ai of Object.keys(GS1_AIS).sort((a, b) => b.length - a.length)) {
-      if (part.startsWith(ai)) {
-        fields[GS1_AIS[ai]] = part.slice(ai.length);
-        break;
+
+  if (hasParens) {
+    // Parenthetical format: (01)05012345678900(17)201231
+    const re = /\((\d{2,4})\)([^(]*)/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text)) !== null) {
+      const ai = m[1];
+      const val = m[2].trim();
+      const label = GS1_AIS[ai];
+      if (label) fields[label] = val;
+      else fields[`AI ${ai}`] = val;
+    }
+  } else {
+    // FNC1-separated format: \x1d01\x1d05012345678900\x1d17\x1d201231
+    const parts = text.split('\x1d').filter(Boolean);
+    for (const part of parts) {
+      for (const ai of Object.keys(GS1_AIS).sort((a, b) => b.length - a.length)) {
+        if (part.startsWith(ai)) {
+          fields[GS1_AIS[ai]] = part.slice(ai.length);
+          break;
+        }
       }
     }
   }
+
   if (Object.keys(fields).length === 0) return null;
   return result('gs1_payload', fields, 0.9, 0.85);
 }
