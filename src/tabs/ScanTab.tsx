@@ -23,6 +23,7 @@ export function ScanTab({ settings, hasText, addEntry, showToast }: ScanTabProps
   const [hintVisible, setHintVisible] = useState(true);
   const [cameraPermission, setCameraPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt');
   const [scannerEnabled, setScannerEnabled] = useState(false);
+  const [flashGreen, setFlashGreen] = useState(false);
   const { requestPosition } = useGeolocation();
 
   const handleResult = useCallback(async ({ text, format }: { text: string; format: string }) => {
@@ -59,8 +60,10 @@ export function ScanTab({ settings, hasText, addEntry, showToast }: ScanTabProps
     if (settings.vibrate) navigator.vibrate?.(200);
     if (settings.beep) beep();
     if (hintVisible) setHintVisible(false);
+    setFlashGreen(true);
+    setTimeout(() => setFlashGreen(false), 600);
 
-    showToast({ id, text, format, semanticType: analysis.semanticType });
+    showToast({ id, text, format, semanticType: analysis.semanticType, entry });
   }, [settings, hasText, addEntry, requestPosition, hintVisible, showToast]);
 
   const { error, flipCamera, decodeFromImage, cameras } = useScanner(videoRef, {
@@ -129,21 +132,38 @@ export function ScanTab({ settings, hasText, addEntry, showToast }: ScanTabProps
         autoPlay
       />
 
-      {/* Corner bracket overlay */}
+      {/* Scanning overlay */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="relative w-56 h-56">
+        {/* Wide rectangle for 1D barcodes, also works for QR */}
+        <div
+          className={`relative transition-colors duration-300`}
+          style={{ width: 280, height: 140 }}
+        >
+          {/* Corner brackets */}
           {([
             'top-0 left-0 border-t-4 border-l-4 rounded-tl-lg',
             'top-0 right-0 border-t-4 border-r-4 rounded-tr-lg',
             'bottom-0 left-0 border-b-4 border-l-4 rounded-bl-lg',
             'bottom-0 right-0 border-b-4 border-r-4 rounded-br-lg',
           ] as const).map((cls, i) => (
-            <div key={i} className={`absolute w-10 h-10 border-white ${cls}`} />
+            <div
+              key={i}
+              className={`absolute w-8 h-8 transition-colors duration-300 ${cls}`}
+              style={{ borderColor: flashGreen ? '#4ade80' : 'white' }}
+            />
           ))}
+
+          {/* Animated scan line */}
+          <div
+            className="absolute left-2 right-2 h-0.5 rounded-full animate-scan-line"
+            style={{ background: flashGreen ? '#4ade80' : 'rgba(255,255,255,0.85)' }}
+          />
         </div>
+
+        {/* Hint text */}
         <p
-          className={`absolute text-white/70 text-sm font-medium transition-opacity duration-700 ${hintVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-          style={{ top: 'calc(50% + 120px)' }}
+          className={`absolute text-white/70 text-sm font-medium transition-opacity duration-700 ${hintVisible ? 'opacity-100' : 'opacity-0'}`}
+          style={{ top: 'calc(50% + 90px)' }}
         >
           Point at a barcode
         </p>

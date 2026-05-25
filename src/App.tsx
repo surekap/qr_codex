@@ -7,12 +7,15 @@ import { ScanTab } from './tabs/ScanTab';
 import { HistoryTab } from './tabs/HistoryTab';
 import { CreateTab } from './tabs/CreateTab';
 import { SettingsTab } from './tabs/SettingsTab';
+import { DetailModal } from './components/DetailModal';
 import { useHistory } from './hooks/useHistory';
 import { useSettings } from './hooks/useSettings';
+import type { ScanEntry } from './types';
 
 export default function App() {
   const [tab, setTab] = useState<TabId>('scan');
   const [toast, setToast] = useState<ToastData | null>(null);
+  const [toastEntry, setToastEntry] = useState<ScanEntry | null>(null);
   const [createText, setCreateText] = useState('');
   const [updateReady, setUpdateReady] = useState(false);
   const { history, addEntry, deleteEntry, clearHistory, hasText } = useHistory();
@@ -36,6 +39,10 @@ export default function App() {
   const handleCreateFromHistory = useCallback((text: string) => {
     setCreateText(text);
     setTab('create');
+  }, []);
+
+  const handleToastDetailOpen = useCallback((entry: ScanEntry) => {
+    setToastEntry(entry);
   }, []);
 
   return (
@@ -77,7 +84,14 @@ export default function App() {
         </div>
       </main>
 
-      <Toast toast={toast} onDismiss={dismissToast} />
+      <Toast toast={toast} onDismiss={dismissToast} onDetailOpen={handleToastDetailOpen} />
+      {toastEntry && (
+        <DetailModal
+          entry={toastEntry}
+          onClose={() => setToastEntry(null)}
+          onCreateFromText={text => { setToastEntry(null); handleCreateFromHistory(text); }}
+        />
+      )}
       <TabBar active={tab} onChange={setTab} />
     </div>
   );

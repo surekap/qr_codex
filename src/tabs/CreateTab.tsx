@@ -56,10 +56,10 @@ export function CreateTab({ prefillText, onPrefillConsumed }: CreateTabProps) {
         bcid: fmt.bcid,
         text: text.trim(),
         scale: 4,
-        height: fmt.bcid === 'pdf417' ? 12 : undefined,
         includetext: false,
         backgroundcolor: 'FFFFFF',
       };
+      if (fmt.bcid === 'pdf417') opts.height = 12;
       if (isQr) opts.eclevel = 'H';
       bwipjs.toCanvas(canvas, opts);
 
