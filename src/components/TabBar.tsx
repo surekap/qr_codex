@@ -15,6 +15,7 @@ interface TabBarProps {
 export function TabBar({ active, onChange }: TabBarProps) {
   return (
     <nav
+      aria-label="Main navigation"
       className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex z-40"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
@@ -22,6 +23,7 @@ export function TabBar({ active, onChange }: TabBarProps) {
         <button
           key={t.id}
           onClick={() => onChange(t.id)}
+          aria-current={active === t.id ? 'page' : undefined}
           className={`flex-1 flex flex-col items-center py-2 gap-0.5 text-xs font-medium transition-colors ${
             active === t.id ? 'text-accent' : 'text-gray-400'
           }`}

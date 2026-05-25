@@ -10,8 +10,6 @@ import { SettingsTab } from './tabs/SettingsTab';
 import { useHistory } from './hooks/useHistory';
 import { useSettings } from './hooks/useSettings';
 
-declare const __APP_VERSION__: string;
-
 export default function App() {
   const [tab, setTab] = useState<TabId>('scan');
   const [toast, setToast] = useState<ToastData | null>(null);
@@ -30,18 +28,15 @@ export default function App() {
     });
   }, []);
 
-  function handleReload() {
-    window.location.reload();
-  }
+  const handleReload = useCallback(() => window.location.reload(), []);
 
-  const showToast = useCallback((data: ToastData) => {
-    setToast(data);
-  }, []);
+  const showToast = useCallback((data: ToastData) => setToast(data), []);
+  const dismissToast = useCallback(() => setToast(null), []);
 
-  function handleCreateFromHistory(text: string) {
+  const handleCreateFromHistory = useCallback((text: string) => {
     setCreateText(text);
     setTab('create');
-  }
+  }, []);
 
   return (
     <div className="flex flex-col h-[100dvh] bg-white overflow-hidden">
@@ -78,12 +73,12 @@ export default function App() {
             settings={settings}
             updateSettings={updateSettings}
             clearHistory={clearHistory}
-            version={typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'}
+            version={__APP_VERSION__}
           />
         </div>
       </main>
 
-      <Toast toast={toast} onDismiss={() => setToast(null)} />
+      <Toast toast={toast} onDismiss={dismissToast} />
       <TabBar active={tab} onChange={setTab} />
     </div>
   );
