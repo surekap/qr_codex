@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useHistory } from './useHistory';
-import { ScanEntry } from '../types';
+import type { ScanEntry } from '../types';
 
 const makeEntry = (text: string): ScanEntry => ({
   id: crypto.randomUUID(),

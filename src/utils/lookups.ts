@@ -1,4 +1,4 @@
-import { ExternalLookupResult, SemanticType } from '../types';
+import type { ExternalLookupResult, SemanticType } from '../types';
 
 export async function fetchExternalLookup(
   text: string,

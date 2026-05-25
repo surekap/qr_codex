@@ -1,4 +1,4 @@
-import { AnalysisResult, SemanticType } from '../types';
+import type { AnalysisResult, SemanticType } from '../types';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 

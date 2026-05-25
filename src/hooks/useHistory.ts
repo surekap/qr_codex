@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { ScanEntry, STORAGE_KEYS } from '../types';
+import type { ScanEntry } from '../types';
+import { STORAGE_KEYS } from '../types';
 import { storageGet, storageSet } from '../utils/storage';
 
 export function useHistory() {

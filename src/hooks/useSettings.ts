@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { AppSettings, DEFAULT_SETTINGS, STORAGE_KEYS } from '../types';
+import type { AppSettings } from '../types';
+import { DEFAULT_SETTINGS, STORAGE_KEYS } from '../types';
 import { storageGet, storageSet } from '../utils/storage';
 
 export function useSettings() {
