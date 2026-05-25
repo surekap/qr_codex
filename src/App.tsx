@@ -51,7 +51,6 @@ export default function App() {
         <div className={tab === 'scan' ? 'block h-full' : 'hidden'}>
           <ScanTab
             settings={settings}
-            history={history}
             hasText={hasText}
             addEntry={addEntry}
             showToast={showToast}

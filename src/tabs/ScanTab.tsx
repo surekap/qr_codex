@@ -10,21 +10,26 @@ import { storageGet, storageSet } from '../utils/storage';
 
 interface ScanTabProps {
   settings: AppSettings;
-  history: ScanEntry[];
   hasText: (text: string) => boolean;
   addEntry: (entry: ScanEntry) => void;
   showToast: (data: ToastData) => void;
 }
 
 export function ScanTab({ settings, hasText, addEntry, showToast }: ScanTabProps) {
-  const videoRef = useRef<HTMLVideoElement>(null) as React.RefObject<HTMLVideoElement>;
+  const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const lastTextRef = useRef<string>('');
+  const lastTextTimeRef = useRef<number>(0);
   const [hintVisible, setHintVisible] = useState(true);
   const [cameraPermission, setCameraPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt');
   const [scannerEnabled, setScannerEnabled] = useState(false);
   const { requestPosition } = useGeolocation();
 
   const handleResult = useCallback(async ({ text, format }: { text: string; format: string }) => {
+    const now = Date.now();
+    if (text === lastTextRef.current && now - lastTextTimeRef.current < 2000) return;
+    lastTextRef.current = text;
+    lastTextTimeRef.current = now;
     if (!settings.saveDuplicates && hasText(text)) return;
     const analysis = analyzeBarcode(text, format);
     const id = crypto.randomUUID();
@@ -136,11 +141,12 @@ export function ScanTab({ settings, hasText, addEntry, showToast }: ScanTabProps
             <div key={i} className={`absolute w-10 h-10 border-white ${cls}`} />
           ))}
         </div>
-        {hintVisible && (
-          <p className="absolute text-white/70 text-sm font-medium" style={{ top: 'calc(50% + 120px)' }}>
-            Point at a barcode
-          </p>
-        )}
+        <p
+          className={`absolute text-white/70 text-sm font-medium transition-opacity duration-700 ${hintVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          style={{ top: 'calc(50% + 120px)' }}
+        >
+          Point at a barcode
+        </p>
       </div>
 
       {/* Overlay controls — top right */}
